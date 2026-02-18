@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw — VPS & LLM Local</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --color-primary: #1a1a1a;
+            --color-secondary: #666;
+            --color-background: #fff;
+            --color-surface: #f5f5f5;
+            --color-border: #ddd;
+            --color-success: #00aa00;
+            --color-success-bg: #e8f5e9;
+            --color-danger: #cc0000;
+            --color-danger-bg: #fff0f0;
+            --color-warn-bg: #fff8f0;
+            --color-warn-border: #cc6600;
+            --color-info-bg: #f0f6ff;
+            --color-info-border: #0066cc;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--color-primary);
+            background: var(--color-background);
+            font-size: 14px;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        [data-lucide] {
+            display: inline-block;
+            vertical-align: middle;
+            stroke: currentColor;
+            stroke-width: 1.75;
+            fill: none;
+            flex-shrink: 0;
+        }
+        .icon-sm [data-lucide] { width: 14px; height: 14px; }
+        .icon-md [data-lucide] { width: 18px; height: 18px; }
+        .icon-lg [data-lucide] { width: 22px; height: 22px; }
+
+        /* NAV */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--color-background);
+            border-bottom: 1px solid var(--color-border);
+            padding: 0 24px;
+        }
+        .top-nav-inner {
+            display: flex;
+            align-items: center;
+            max-width: 960px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .nav-brand {
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--color-primary);
+            padding: 12px 16px 12px 0;
+            border-right: 1px solid var(--color-border);
+            margin-right: 8px;
+            flex-shrink: 0;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-links {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--color-background);
+            border-bottom: 1px solid var(--color-border);
+            flex-direction: column;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+        }
+        .nav-links.open { display: flex; }
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 24px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--color-secondary);
+            text-decoration: none;
+            border-bottom: 1px solid var(--color-border);
+            min-height: 44px;
+            transition: color 0.15s, background 0.15s;
+        }
+        .nav-links a:hover { color: var(--color-primary); background: var(--color-surface); }
+        .hamburger {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px 12px;
+            margin-left: auto;
+            min-width: 44px;
+        }
+        .hamburger span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--color-primary);
+            transition: transform 0.3s ease, opacity 0.2s ease;
+            transform-origin: center;
+        }
+        .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        /* LAYOUT */
+        .container { width: 100%; padding: 16px; }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid var(--color-primary);
+        }
+        .header-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--color-primary);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            color: #fff;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
+        }
+        .subtitle {
+            font-size: 13px;
+            color: var(--color-secondary);
+        }
+        .badge {
+            display: inline-block;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 11px;
+            color: var(--color-secondary);
+            margin-top: 8px;
+        }
+
+        /* SECTIONS */
+        .section {
+            margin-bottom: 24px;
+            scroll-margin-top: 60px;
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--color-primary);
+        }
+        .section-title .num {
+            background: var(--color-primary);
+            color: #fff;
+            border-radius: 4px;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* CALLOUTS */
+        .callout {
+            border-radius: 6px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .callout-icon { flex-shrink: 0; margin-top: 1px; }
+        .callout-body { flex: 1; }
+        .callout-title { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+        .callout-text { font-size: 13px; line-height: 1.5; }
+
+        .callout.info {
+            background: var(--color-info-bg);
+            border-left: 3px solid var(--color-info-border);
+            color: #003d80;
+        }
+        .callout.warn {
+            background: var(--color-warn-bg);
+            border-left: 3px solid var(--color-warn-border);
+            color: #7a3d00;
+        }
+        .callout.success {
+            background: var(--color-success-bg);
+            border-left: 3px solid var(--color-success);
+            color: #005500;
+        }
+        .callout.danger {
+            background: var(--color-danger-bg);
+            border-left: 3px solid var(--color-danger);
+            color: #7a0000;
+        }
+
+        /* TABLES */
+        .table-wrap { overflow-x: auto; margin-bottom: 12px; border-radius: 6px; border: 1px solid var(--color-border); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 400px; }
+        thead { background: var(--color-primary); color: #fff; }
+        thead th { padding: 10px 12px; text-align: left; font-weight: 600; font-size: 12px; letter-spacing: 0.02em; }
+        tbody tr { border-bottom: 1px solid var(--color-border); }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:nth-child(even) { background: var(--color-surface); }
+        td { padding: 9px 12px; vertical-align: top; }
+        .tag {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .tag.green { background: #d4edda; color: #155724; }
+        .tag.red { background: #f8d7da; color: #721c24; }
+        .tag.yellow { background: #fff3cd; color: #856404; }
+        .tag.blue { background: #d1ecf1; color: #0c5460; }
+        .tag.grey { background: #e2e3e5; color: #383d41; }
+
+        /* CODE BLOCKS */
+        .code-block {
+            background: #1a1a1a;
+            color: #e8e8e8;
+            border-radius: 6px;
+            padding: 14px 16px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            overflow-x: auto;
+            margin-bottom: 12px;
+            white-space: pre;
+        }
+        .code-block .comment { color: #7a8a7a; }
+        .code-block .key { color: #82b1ff; }
+        .code-block .val { color: #c3e88d; }
+        .code-block .ok { color: #69f0ae; }
+        .code-block .warn { color: #ffd740; }
+        .code-block .bad { color: #ff5252; }
+
+        /* CARDS */
+        .card-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+        .card {
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 14px;
+            background: var(--color-background);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--color-surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .card-title { font-weight: 700; font-size: 13px; }
+        .card-subtitle { font-size: 11px; color: var(--color-secondary); }
+        .card-body { font-size: 13px; color: var(--color-secondary); line-height: 1.5; }
+
+        /* METRIC ROW */
+        .metric-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .metric {
+            flex: 1;
+            min-width: 100px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .metric-value { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+        .metric-label { font-size: 11px; color: var(--color-secondary); margin-top: 2px; }
+
+        /* RECOMMENDATION BOX */
+        .rec-box {
+            border: 2px solid var(--color-primary);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .rec-box-header {
+            background: var(--color-primary);
+            color: #fff;
+            padding: 10px 14px;
+            font-weight: 700;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .rec-box-body { padding: 14px; }
+
+        /* STEPS */
+        .steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 12px; }
+        .step {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .step:last-child { border-bottom: none; }
+        .step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .step-content { flex: 1; }
+        .step-title { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+        .step-desc { font-size: 13px; color: var(--color-secondary); line-height: 1.5; }
+
+        /* DIVIDER */
+        .divider { height: 1px; background: var(--color-border); margin: 20px 0; }
+
+        /* SOURCE */
+        .sources {
+            background: var(--color-surface);
+            border-radius: 6px;
+            padding: 12px 14px;
+            font-size: 12px;
+            color: var(--color-secondary);
+        }
+        .sources a { color: var(--color-info-border); text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+
+        /* ÍNDICE */
+        .toc {
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .toc-header {
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            padding: 10px 14px;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--color-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toc-list {
+            list-style: none;
+            padding: 6px 0;
+        }
+        .toc-list li a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            font-size: 13px;
+            color: var(--color-primary);
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+            border-left: 3px solid transparent;
+        }
+        .toc-list li a:hover {
+            background: var(--color-info-bg);
+            color: var(--color-info-border);
+            border-left-color: var(--color-info-border);
+        }
+        .toc-list li a .toc-num {
+            background: var(--color-primary);
+            color: #fff;
+            border-radius: 3px;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .toc-list li a .toc-label { flex: 1; }
+        .toc-list li a .toc-desc {
+            font-size: 11px;
+            color: var(--color-secondary);
+        }
+        @media (min-width: 768px) {
+            .toc-list { display: grid; grid-template-columns: 1fr 1fr; padding: 4px 0; }
+        }
+
+        /* DESKTOP */
+        @media (min-width: 768px) {
+            .container { padding: 24px; max-width: 960px; margin: 0 auto; }
+            .card-grid { flex-direction: row; flex-wrap: wrap; }
+            .card-grid .card { flex: 1; min-width: 260px; }
+            .nav-links {
+                display: flex !important;
+                position: static;
+                flex-direction: row;
+                border: none;
+                box-shadow: none;
+                background: transparent;
+                padding: 0;
+                gap: 0;
+            }
+            .nav-links a {
+                border: none;
+                padding: 0 12px;
+                height: 48px;
+            }
+            .hamburger { display: none; }
+            h1 { font-size: 28px; }
+            .metric-value { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="top-nav">
+    <div class="top-nav-inner">
+        <div class="nav-brand">
+            <span class="icon-sm"><i data-lucide="server"></i></span>
+            OpenClaw · VPS & LLM
+        </div>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#vps"><span class="icon-sm"><i data-lucide="cloud"></i></span> VPS</a></li>
+            <li><a href="#llm"><span class="icon-sm"><i data-lucide="cpu"></i></span> LLM Local</a></li>
+            <li><a href="#ollama"><span class="icon-sm"><i data-lucide="box"></i></span> Ollama</a></li>
+            <li><a href="#gpu"><span class="icon-sm"><i data-lucide="zap"></i></span> GPU</a></li>
+            <li><a href="#decisao"><span class="icon-sm"><i data-lucide="check-circle"></i></span> Decisão</a></li>
+            <li><a href="#custos"><span class="icon-sm"><i data-lucide="dollar-sign"></i></span> Custos</a></li>
+        </ul>
+        <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-icon icon-lg">
+            <i data-lucide="server"></i>
+        </div>
+        <h1>OpenClaw — VPS & LLM Local</h1>
+        <p class="subtitle">Estudo de infraestrutura: onde alojar, que modelo correr e a quanto custo</p>
+        <span class="badge">Fevereiro 2026 · Baseado em docs oficiais + comunidade</span>
+    </div>
+
+    <!-- ÍNDICE -->
+    <div class="toc">
+        <div class="toc-header">
+            <span class="icon-sm"><i data-lucide="list"></i></span>
+            Índice
+        </div>
+        <ul class="toc-list">
+            <li>
+                <a href="#vps">
+                    <span class="toc-num">1</span>
+                    <span class="icon-sm"><i data-lucide="cloud"></i></span>
+                    <span class="toc-label">Opções de VPS</span>
+                    <span class="toc-desc">Hostinger, Vultr, DO</span>
+                </a>
+            </li>
+            <li>
+                <a href="#llm">
+                    <span class="toc-num">2</span>
+                    <span class="icon-sm"><i data-lucide="cpu"></i></span>
+                    <span class="toc-label">Requisitos LLM Local</span>
+                    <span class="toc-desc">Tamanhos e contexto</span>
+                </a>
+            </li>
+            <li>
+                <a href="#ollama">
+                    <span class="toc-num">3</span>
+                    <span class="icon-sm"><i data-lucide="box"></i></span>
+                    <span class="toc-label">Ollama + OpenClaw</span>
+                    <span class="toc-desc">Setup e configuração</span>
+                </a>
+            </li>
+            <li>
+                <a href="#gpu">
+                    <span class="toc-num">4</span>
+                    <span class="icon-sm"><i data-lucide="zap"></i></span>
+                    <span class="toc-label">GPU vs Sem GPU</span>
+                    <span class="toc-desc">Análise de custos</span>
+                </a>
+            </li>
+            <li>
+                <a href="#decisao">
+                    <span class="toc-num">5</span>
+                    <span class="icon-sm"><i data-lucide="check-circle"></i></span>
+                    <span class="toc-label">Decisão Final</span>
+                    <span class="toc-desc">Arquitectura recomendada</span>
+                </a>
+            </li>
+            <li>
+                <a href="#custos">
+                    <span class="toc-num">6</span>
+                    <span class="icon-sm"><i data-lucide="dollar-sign"></i></span>
+                    <span class="toc-label">Resumo de Custos</span>
+                    <span class="toc-desc">~$14–22/mês total</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- CONTEXTO -->
+    <div class="section" id="contexto">
+        <div class="callout info">
+            <div class="callout-icon icon-md"><i data-lucide="info"></i></div>
+            <div class="callout-body">
+                <div class="callout-title">Objectivo deste documento</div>
+                <div class="callout-text">Analisar as melhores opções de alojamento VPS para correr o OpenClaw em modo 24/7, e perceber que LLM local (via Ollama) podemos usar como base de suporte para tarefas simples — reduzindo custos de API ao mínimo.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECÇÃO 1 — VPS -->
+    <div class="section" id="vps">
+        <div class="section-title">
+            <span class="num">1</span>
+            <span class="icon-md"><i data-lucide="cloud"></i></span>
+            Opções de VPS
+        </div>
+
+        <p style="font-size:13px;color:var(--color-secondary);margin-bottom:12px;">
+            Comparação dos principais fornecedores de VPS com boa relação qualidade/preço em 2026.
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fornecedor</th>
+                        <th>Preço/mês</th>
+                        <th>RAM</th>
+                        <th>CPU</th>
+                        <th>Storage</th>
+                        <th>Avaliação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Hostinger KVM 1</strong></td>
+                        <td>$4.99</td>
+                        <td>4 GB</td>
+                        <td>1 vCPU</td>
+                        <td>50 GB NVMe</td>
+                        <td><span class="tag yellow">OpenClaw only</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hostinger KVM 2</strong></td>
+                        <td>$6.99</td>
+                        <td>8 GB</td>
+                        <td>2 vCPU</td>
+                        <td>100 GB NVMe</td>
+                        <td><span class="tag green">Recomendado</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hostinger KVM 3</strong></td>
+                        <td>~$12.99</td>
+                        <td>16 GB</td>
+                        <td>4 vCPU</td>
+                        <td>200 GB NVMe</td>
+                        <td><span class="tag blue">Llama 8B confortável</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hostinger KVM 4</strong></td>
+                        <td>$19.99</td>
+                        <td>32 GB</td>
+                        <td>8 vCPU</td>
+                        <td>400 GB NVMe</td>
+                        <td><span class="tag grey">Enterprise</span></td>
+                    </tr>
+                    <tr>
+                        <td>Vultr</td>
+                        <td>$2.50+</td>
+                        <td>512 MB+</td>
+                        <td>1 vCPU</td>
+                        <td>NVMe</td>
+                        <td><span class="tag grey">Alternativa</span></td>
+                    </tr>
+                    <tr>
+                        <td>DigitalOcean</td>
+                        <td>$4.00+</td>
+                        <td>1 GB+</td>
+                        <td>1 vCPU</td>
+                        <td>SSD</td>
+                        <td><span class="tag grey">Dev-friendly</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout success">
+            <div class="callout-icon icon-md"><i data-lucide="star"></i></div>
+            <div class="callout-body">
+                <div class="callout-title">Porquê o Hostinger?</div>
+                <div class="callout-text">AMD EPYC processors + NVMe SSD + template Ubuntu 24.04 com Ollama pré-instalado + DDoS protection + IP dedicado gratuito. Template oficial Ollama disponível directamente no hPanel — zero configuração manual.</div>
+            </div>
+        </div>
+
+        <div class="callout warn">
+            <div class="callout-icon icon-md"><i data-lucide="alert-triangle"></i></div>
+            <div class="callout-body">
+                <div class="callout-title">KVM 2 (8 GB) + Llama 8B Q4 — margem apertada</div>
+                <div class="callout-text">OS Ubuntu (~1.5 GB) + OpenClaw daemon (~0.5 GB) + Llama 8B Q4 (~5 GB) = ~7 GB. Funciona mas sem margem. Para Llama 8B confortável, o KVM 3 (16 GB) é o mínimo recomendado.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECÇÃO 2 — LLM LOCAL -->
+    <div class="section" id="llm">
+        <div class="section-title">
+            <span class="num">2</span>
+            <span class="icon-md"><i data-lucide="cpu"></i></span>
+            Requisitos para LLM Local
+        </div>
+
+        <p style="font-size:13px;color:var(--color-secondary);margin-bottom:12px;">
+            O que a documentação oficial do OpenClaw diz sobre modelos locais.
+        </p>
+
+        <div class="callout info">
+            <div class="callout-icon icon-md"><i data-lucide="book-open"></i></div>
+            <div class="callout-body">
+                <div class="callout-title">Doc oficial (gateway/local-models)</div>
+                <div class="callout-text">"Usa o <strong>maior modelo que conseguires correr</strong>. Hardware recomendado: ≥2 Mac Studios ou GPU rig ~$30k+. Mínimo viável: 1 GPU com 24 GB VRAM. Modelos pequenos e agressivamente quantizados aumentam o risco de prompt injection."</div>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Modelo</th>
+                        <th>RAM/VRAM</th>
+                        <th>Vel. CPU VPS</th>
+                        <th>Tool Calling</th>
+                        <th>Para OpenClaw</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Llama 3.2 3B Q4</strong></td>
+                        <td>~2 GB</td>
+                        <td>Rápido</td>
+                        <td><span class="tag yellow">Fraco</span></td>
+                        <td><span class="tag yellow">Heartbeats simples</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Llama 3.1 8B Q4</strong></td>
+                        <td>~5 GB</td>
+                        <td>Moderado</td>
+                        <td><span class="tag green">Sim</span></td>
+                        <td><span class="tag green">Heartbeats + rotina</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Qwen2.5 7B Q4</strong></td>
+                        <td>~5 GB</td>
+                        <td>Moderado</td>
+                        <td><span class="tag green">Sim</span></td>
+                        <td><span class="tag green">Heartbeats + rotina</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Qwen2.5 14B Q4</strong></td>
+                        <td>~9 GB</td>
+                        <td>Lento</td>
+                        <td><span class="tag green">Sim</span></td>
+                        <td><span class="tag blue">Uso mais robusto</span></td>
+                    </tr>
+                    <tr>
+                        <td>llama3.3 (70B Q4)</td>
+                        <td>~40 GB</td>
+                        <td>Muito lento</td>
+                        <td><span class="tag green">Excelente</span></td>
+                        <td><span class="tag grey">Precisa GPU</span></td>
+                    </tr>
+                    <tr>
+                        <td>qwen2.5-coder:32b</td>
+                        <td>~20 GB</td>
+                        <td>Lento</td>
+                        <td><span class="tag green">Excelente</span></td>
+                        <td><span class="tag grey">Precisa GPU</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout warn">
+            <div class="callout-icon icon-md"><i data-lucide="shield-alert"></i></div>
+            <div class="callout-body">
+                <div class="callout-title">O mito do "só modelos 16B+"</div>
+                <div class="callout-text">O comentário que circula na comunidade é impreciso. A limitação não é o tamanho do modelo — é o contexto. O OpenClaw precisa de mínimo 16k tokens de contexto. O Ollama por defeito usa apenas 4096 tokens, o que faz falhar. A solução é configurar <code>OLLAMA_CONTEXT_LENGTH=16384</code>. Com esta configuração, o Llama 8B funciona.</div>
+            </div>
+        </div>
+
+        <div class="code-block"><span class="comment"># Velocidade de inferência comparativa</span>
+
+<span class="ok">GPU RTX 4090 (24GB):</span>  ~100-150 tokens/seg  ← fluido e interactivo
+<span class="ok">MacBook M1 Pro:</span>       ~30-60  tokens/seg  ← excelente para uso local
+<span class="warn">CPU VPS 2 cores:</span>      ~5-15   tokens/seg  ← aceitável para background
+<span class="warn">CPU VPS 4 cores:</span>      ~10-25  tokens/seg  ← ok para heartbeats</div>
+    </div>
+
+    <!-- SECÇÃO 3 — OLLAMA -->
+    <div class="section" id="ollama">
+        <div class="section-title">
+            <span class="num">3</span>
+            <span class="icon-md"><i data-lucide="box"></i></span>
+            Ollama + OpenClaw + Hostinger
+        </div>
+
+        <div class="card-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-md"><i data-lucide="check-circle-2"></i></div>
+                    <div>
+                        <div class="card-title">Hostinger suporta Ollama</div>
+                        <div class="card-subtitle">Template oficial disponível</div>
+                    </div>
+                </div>
+                <div class="card-body">O Hostinger tem um template Ubuntu 24.04 com Ollama + Llama 3 + Open WebUI pré-instalados. Escolhes no hPanel ao criar o VPS — zero configuração manual.</div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-md"><i data-lucide="check-circle-2"></i></div>
+                    <div>
+                        <div class="card-title">OpenClaw suporta Ollama</div>
+                        <div class="card-subtitle">Integração nativa</div>
+                    </div>
+                </div>
+                <div class="card-body">O OpenClaw integra Ollama nativamente. Detecta automaticamente modelos com suporte a tools via <code>/api/tags</code>. Configuração mínima no <code>openclaw.json</code>.</div>
+            </div>
+        </div>
+
+        <div class="code-block"><span class="comment"># Configuração OpenClaw para Ollama (openclaw.json)</span>
+{
+  <span class="key">"model"</span>: {
+    <span class="key">"default"</span>: <span class="val">"claude-haiku-4-5"</span>,
+    <span class="key">"routing"</span>: {
+      <span class="key">"heartbeat"</span>: <span class="val">"ollama/llama3.1:8b"</span>,   <span class="comment">← grátis, local</span>
+      <span class="key">"routine"</span>:   <span class="val">"ollama/llama3.1:8b"</span>,   <span class="comment">← grátis, local</span>
+      <span class="key">"complex"</span>:   <span class="val">"claude-haiku-4-5"</span>,    <span class="comment">← API barata</span>
+      <span class="key">"advanced"</span>:  <span class="val">"claude-sonnet-4-5"</span>   <span class="comment">← só se necessário</span>
+    }
+  },
+  <span class="key">"heartbeat"</span>: {
+    <span class="key">"provider"</span>: <span class="val">"local"</span>,
+    <span class="key">"model"</span>: <span class="val">"ollama/llama3.1:8b"</span>,
+    <span class="key">"interval_minutes"</span>: 60
+  },
+  <span class="key">"tools"</span>: {
+    <span class="key">"byProvider"</span>: {
+      <span class="key">"ollama"</span>: { <span class="key">"profile"</span>: <span class="val">"minimal"</span> }  <span class="comment">← reduz overhead de tokens</span>
+    }
+  }
+}</div>
+
+        <div class="callout warn">
+            <div class="callout-icon icon-md"><i data-lucide="settings"></i></div>
+            <div class="callout-body">
+                <div class="callout-title">Configuração crítica — Context Length</div>
+                <div class="callout-text">O Ollama usa 4096 tokens por defeito. O OpenClaw precisa de ≥16k. Tens de definir explicitamente no VPS:</div>
+            </div>
+        </div>
+
+        <div class="code-block"><span class="comment"># No VPS — definir context length do Ollama</span>
+<span class="ok">export OLLAMA_CONTEXT_LENGTH=32768</span>
+
+<span class="comment"># Ou via Docker Compose</span>
+environment:
+  - OLLAMA_HOST=0.0.0.0:11434
+  - <span class="ok">OLLAMA_CONTEXT_LENGTH=32768</span>
+
+<span class="comment"># Porquê 32k e não 16k?</span>
+<span class="comment"># System prompt + tool schemas = ~6700 tokens de overhead</span>
+<span class="comment"># 32k deixa ~25k livres para conversa real</span></div>
+    </div>
+
+    <!-- SECÇÃO 4 — GPU vs SEM GPU -->
+    <div class="section" id="gpu">
+        <div class="section-title">
+            <span class="num">4</span>
+            <span class="icon-md"><i data-lucide="zap"></i></span>
+            GPU vs Sem GPU no VPS
+        </div>
+
+        <div class="metric-row">
+            <div class="metric">
+                <div class="metric-value" style="color:var(--color-danger)">$288</div>
+                <div class="metric-label">GPU VPS 24/7<br>(RTX 4090 Vast.ai)</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" style="color:var(--color-danger)">$1.433</div>
+                <div class="metric-label">GPU VPS 24/7<br>(A100 RunPod)</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" style="color:var(--color-success)">$6.99</div>
+                <div class="metric-label">VPS CPU 24/7<br>(Hostinger KVM 2)</div>
+            </div>
+        </div>
+
+        <div class="callout danger">
+            <div class="callout-icon icon-md"><i data-lucide="x-circle"></i></div>
+            <div class="callout-body">
+                <div class="callout-title">GPU VPS 24/7 — Não faz sentido</div>
+                <div class="callout-text">GPU cloud é cobrado por hora. Para uso contínuo 24/7, o custo mensal é proibitivo ($288–$1.433/mês). Só compensa alugar GPU por horas para tarefas pontuais intensivas.</div>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cenário</th>
+                        <th>Custo</th>
+                        <th>Velocidade</th>
+                        <th>Modelos</th>
+                        <th>Veredicto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>VPS CPU + API cloud</td>
+                        <td>~$15/mês</td>
+                        <td>5-15 tok/s</td>
+                        <td>3B–8B local</td>
+                        <td><span class="tag green">Recomendado</span></td>
+                    </tr>
+                    <tr>
+                        <td>GPU VPS 24/7</td>
+                        <td>$288–$1.433/mês</td>
+                        <td>100+ tok/s</td>
+                        <td>Qualquer</td>
+                        <td><span class="tag red">Não compensa</span></td>
+                    </tr>
+                    <tr>
+                        <td>GPU VPS por horas</td>
+                        <td>$0.30–$0.60/h</td>
+                        <td>100+ tok/s</td>
+                        <td>Qualquer</td>
+                        <td><span class="tag blue">Para tarefas pontuais</span></td>
+                    </tr>
+                    <tr>
+                        <td>Mac Mini M4 Pro (64GB)</td>
+                        <td>~$1.400 uma vez</td>
+                        <td>60-120 tok/s</td>
+                        <td>Até 70B Q4</td>
+                        <td><span class="tag blue">Futuro — se crescer</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- M1 Pro -->
+        <div class="callout success">
+            <div class="callout-icon icon-md"><i data-lucide="laptop"></i></div>
+            <div class="callout-body">
+                <div class="callout-title">MacBook M1 Pro — excelente para LLM local</div>
+                <div class="callout-text">Memória unificada (UMA): CPU e GPU partilham o mesmo pool. Ollama usa Metal nativamente → 30–60 tok/s com Llama 8B Q4. Com 16 GB RAM sobra espaço confortável. <strong>Usa o Mac para desenvolvimento e testes locais.</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECÇÃO 5 — DECISÃO FINAL -->
+    <div class="section" id="decisao">
+        <div class="section-title">
+            <span class="num">5</span>
+            <span class="icon-md"><i data-lucide="check-circle"></i></span>
+            Decisão Final — Arquitectura Recomendada
+        </div>
+
+        <div class="rec-box">
+            <div class="rec-box-header">
+                <span class="icon-md"><i data-lucide="layers"></i></span>
+                Estratégia Híbrida (a mais sensata e económica)
+            </div>
+            <div class="rec-box-body">
+                <div class="code-block" style="margin-bottom:0"><span class="comment">┌─────────────────────────────────────────────────┐</span>
+<span class="comment">│     HOSTINGER KVM 2  ($6.99/mês)                │</span>
+<span class="comment">│                                                 │</span>
+<span class="ok">│  OpenClaw daemon  →  24/7 online                │</span>
+<span class="ok">│  Ollama + Llama 8B Q4  →  heartbeats + rotina  │</span>
+<span class="ok">│  OLLAMA_CONTEXT_LENGTH=32768                    │</span>
+<span class="comment">└─────────────────────────────────────────────────┘</span>
+              ↓ tasks moderadas
+<span class="comment">┌─────────────────────────────────────────────────┐</span>
+<span class="warn">│         CLAUDE HAIKU 4.5 API  (~$5-10/mês)     │</span>
+<span class="comment">└─────────────────────────────────────────────────┘</span>
+              ↓ tasks complexas (raramente)
+<span class="comment">┌─────────────────────────────────────────────────┐</span>
+<span class="warn">│      CLAUDE SONNET 4.5 API  (pay per use)       │</span>
+<span class="comment">└─────────────────────────────────────────────────┘</span>
+              ↓ desenvolvimento e testes
+<span class="comment">┌─────────────────────────────────────────────────┐</span>
+<span class="ok">│       MACBOOK M1 PRO  (já tens — grátis)        │</span>
+<span class="ok">│  Ollama local, rápido, sem custos               │</span>
+<span class="comment">└─────────────────────────────────────────────────┘</span></div>
+            </div>
+        </div>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                    <div class="step-title">Criar VPS Hostinger KVM 2</div>
+                    <div class="step-desc">Seleccionar template "Ubuntu 24.04 com Ollama" no hPanel. Ollama + Llama 3 + Open WebUI já instalados. Configurar <code>OLLAMA_CONTEXT_LENGTH=32768</code>.</div>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                    <div class="step-title">Instalar OpenClaw no VPS</div>
+                    <div class="step-desc"><code>curl -fsSL https://get.openclaw.ai | bash</code> — Seguir wizard de onboarding. Seleccionar Ollama como modelo local + Claude Haiku como fallback.</div>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-content">
+                    <div class="step-title">Fazer pull do Llama 8B Q4</div>
+                    <div class="step-desc"><code>ollama pull llama3.1:8b-instruct-q4_K_M</code> — Modelo principal para heartbeats e tarefas rotineiras. Gratuito, sem custos de API.</div>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-content">
+                    <div class="step-title">Configurar model routing</div>
+                    <div class="step-desc">Editar <code>~/.openclaw/openclaw.json</code> com routing: Ollama para heartbeats/rotina, Haiku para moderado, Sonnet só para complexo.</div>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">5</div>
+                <div class="step-content">
+                    <div class="step-title">Acesso remoto via Tailscale</div>
+                    <div class="step-desc">Instalar Tailscale no VPS para acesso seguro. Nunca expor a porta 18789 directamente à internet.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="callout info">
+            <div class="callout-icon icon-md"><i data-lucide="trending-up"></i></div>
+            <div class="callout-body">
+                <div class="callout-title">Quando escalar para mais?</div>
+                <div class="callout-text">Se o volume crescer muito → upgrade para KVM 3 (16 GB, ~$12.99) para Llama 8B mais confortável. Se quiseres total privacidade e zero API → Mac Mini M4 Pro (64 GB, ~$1.400 uma vez) é a escolha da comunidade OpenClaw para setup local sério.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECÇÃO 6 — CUSTOS -->
+    <div class="section" id="custos">
+        <div class="section-title">
+            <span class="num">6</span>
+            <span class="icon-md"><i data-lucide="dollar-sign"></i></span>
+            Resumo de Custos
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Custo/mês</th>
+                        <th>Notas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Hostinger KVM 2</strong></td>
+                        <td><strong>$6.99</strong></td>
+                        <td>OpenClaw 24/7 + Ollama</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ollama + Llama 8B Q4</strong></td>
+                        <td><strong>$0</strong></td>
+                        <td>Grátis, corre no VPS</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Claude Haiku 4.5 API</strong></td>
+                        <td><strong>~$5–10</strong></td>
+                        <td>Tasks moderadas</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Claude Sonnet 4.5 API</strong></td>
+                        <td><strong>~$2–5</strong></td>
+                        <td>Só tasks complexas</td>
+                    </tr>
+                    <tr style="background:#f0f9f0;">
+                        <td><strong>Total estimado</strong></td>
+                        <td><strong>~$14–22/mês</strong></td>
+                        <td>OpenClaw completo e funcional</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="metric-row">
+            <div class="metric">
+                <div class="metric-value">$0</div>
+                <div class="metric-label">Custo LLM local<br>(Ollama)</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">~$14</div>
+                <div class="metric-label">Total mínimo<br>por mês</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">~95%</div>
+                <div class="metric-label">Poupança vs<br>só API cloud</div>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Comparação</th>
+                        <th>Custo/mês</th>
+                        <th>LLM local</th>
+                        <th>24/7</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Só API cloud (sem VPS)</td>
+                        <td>$50–200+</td>
+                        <td><span class="tag red">Não</span></td>
+                        <td><span class="tag red">Depende do PC ligado</span></td>
+                    </tr>
+                    <tr>
+                        <td>GPU VPS 24/7</td>
+                        <td>$288–1.433</td>
+                        <td><span class="tag green">Sim (grande)</span></td>
+                        <td><span class="tag green">Sim</span></td>
+                    </tr>
+                    <tr style="background:#f0f9f0;">
+                        <td><strong>VPS CPU + Ollama + API (esta solução)</strong></td>
+                        <td><strong>~$14–22</strong></td>
+                        <td><span class="tag green">Sim (8B)</span></td>
+                        <td><span class="tag green">Sim</span></td>
+                    </tr>
+                    <tr>
+                        <td>Mac Mini M4 Pro (futuro)</td>
+                        <td>~$117/mês (amortizado 12m)</td>
+                        <td><span class="tag green">Sim (70B)</span></td>
+                        <td><span class="tag yellow">Se sempre ligado</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- FONTES -->
+    <div class="divider"></div>
+    <div class="sources">
+        <strong>Fontes:</strong><br>
+        <a href="https://docs.openclaw.ai/providers/ollama" target="_blank">docs.openclaw.ai — Ollama Provider</a> ·
+        <a href="https://docs.openclaw.ai/gateway/local-models.md" target="_blank">docs.openclaw.ai — Local Models</a> ·
+        <a href="https://www.hostinger.com/support/9310983-how-to-use-the-ollama-vps-template-at-hostinger/" target="_blank">Hostinger — Ollama VPS Template</a> ·
+        <a href="https://www.answeroverflow.com/m/1472418082180829204" target="_blank">Community — 16k Context Issue</a> ·
+        <a href="https://www.runpod.io/articles/guides/top-cloud-gpu-providers" target="_blank">RunPod — GPU Cloud Providers</a> ·
+        <a href="https://northflank.com/blog/cheapest-cloud-gpu-providers" target="_blank">Northflank — Cheapest GPU Cloud</a>
+        <br><br>
+        <em>Documento compilado em Fevereiro 2026 · OpenClaw_Documentacao</em>
+    </div>
+
+</div>
+
+<script>
+    lucide.createIcons();
+
+    function toggleMenu() {
+        const nav = document.getElementById('navLinks');
+        const btn = document.getElementById('hamburger');
+        nav.classList.toggle('open');
+        btn.classList.toggle('open');
+    }
+
+    // Fechar menu ao clicar num link
+    document.querySelectorAll('.nav-links a').forEach(link => {
+        link.addEventListener('click', () => {
+            document.getElementById('navLinks').classList.remove('open');
+            document.getElementById('hamburger').classList.remove('open');
+        });
+    });
+
+    // Active nav link no scroll
+    const sections = document.querySelectorAll('.section[id]');
+    const navLinks = document.querySelectorAll('.nav-links a');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop - 80;
+            if (window.scrollY >= sectionTop) current = section.getAttribute('id');
+        });
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+        });
+    });
+</script>
+</body>
+</html>
